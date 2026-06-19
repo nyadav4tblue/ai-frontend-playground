@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Global Styles ───────────────────────────────────────────────── */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  /* Deep romantic gradient background */
+  background: linear-gradient(135deg, #1a0a2e 0%, #16213e 40%, #0f3460 100%);
+  font-family: 'Lato', sans-serif;
+  color: #f8f0f8;
+  overflow-x: hidden;
+}
+
+/* Playfair Display for all romantic headings */
+h1, h2, h3, .font-heading {
+  font-family: 'Playfair Display', serif;
+}
+
+/* ─── Glassmorphism Utilities ─────────────────────────────────────── */
+/* Glass card: frosted glass panel sitting above the gradient background */
+.glass {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 1.5rem;
+}
+
+/* Lighter glass for nested cards */
+.glass-light {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 1rem;
+}
+
+/* ─── Custom Scrollbar ────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(244, 63, 94, 0.4);
+  border-radius: 3px;
+}
+
+/* ─── Selection color ─────────────────────────────────────────────── */
+::selection {
+  background: rgba(244, 63, 94, 0.3);
+  color: #fff;
+}
