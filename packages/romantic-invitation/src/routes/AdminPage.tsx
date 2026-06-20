@@ -1,155 +1,164 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { ChevronDown } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Copy, Eye, Pencil, Plus, Trash2, CopyPlus } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { TopNav } from '../components/TopNav'
 import { useAuth } from '../lib/auth'
-import { getUserInvitations, getInvitationAnalytics } from '../services/invitations'
-import type { InvitationRecord } from '../types'
+import { getUserFlows, deleteFlow, duplicateFlow } from '../services/flows'
+import type { FlowRecord } from '../types'
 
 export function AdminPage() {
   const { user, loading: authLoading } = useAuth()
-  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [copied, setCopied] = useState<string | null>(null)
+  const queryClient = useQueryClient()
 
   const userId = user?.id ?? ''
-  const invitationsQuery = useQuery({
-    queryKey: ['userInvitations', userId],
-    queryFn: () => getUserInvitations(userId),
-    enabled: !authLoading && !!userId,
+
+  const flowsQuery = useQuery({
+    queryKey: ['userFlows', userId],
+    queryFn:  () => getUserFlows(userId),
+    enabled:  !authLoading && !!userId,
   })
 
-  const invitations = invitationsQuery.data?.data ?? []
+  const flows: FlowRecord[] = (flowsQuery.data?.data ?? []) as FlowRecord[]
 
-  // Get analytics for all invitations
-  const analyticsQueries = useQuery({
-    queryKey: ['invitationAnalytics', invitations.map(i => i.id).join(',')],
-    queryFn: async () => {
-      const results = await Promise.all(
-        invitations.map(inv => getInvitationAnalytics(inv.id))
-      )
-      return invitations.map((inv, idx) => ({ ...inv, analytics: results[idx] }))
-    },
-    enabled: invitations.length > 0,
+  const deleteMutation = useMutation({
+    mutationFn: ({ id }: { id: string }) => deleteFlow(id, userId),
+    onSuccess:  () => queryClient.invalidateQueries({ queryKey: ['userFlows', userId] }),
   })
 
-  const invitationsWithAnalytics = analyticsQueries.data ?? []
+  const duplicateMutation = useMutation({
+    mutationFn: ({ id }: { id: string }) => duplicateFlow(id, userId),
+    onSuccess:  () => queryClient.invalidateQueries({ queryKey: ['userFlows', userId] }),
+  })
 
-  // Calculate overall stats
-  const totalViews = invitationsWithAnalytics.reduce((sum, i) => sum + i.analytics.views, 0)
-  const totalResponses = invitationsWithAnalytics.reduce((sum, i) => sum + i.analytics.responses, 0)
-  const totalAccepted = invitationsWithAnalytics.reduce((sum, i) => sum + i.analytics.accepted, 0)
-  const overallAcceptanceRate = totalResponses > 0 ? Math.round((totalAccepted / totalResponses) * 100) : 0
+  function handleCopyUrl(slug: string) {
+    const url = `${window.location.origin}/flow/${slug}`
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(slug)
+      setTimeout(() => setCopied(null), 2000)
+    })
+  }
+
+  function confirmDelete(id: string) {
+    if (window.confirm('Delete this flow and all its responses? This cannot be undone.')) {
+      deleteMutation.mutate({ id })
+    }
+  }
+
+  const now = new Date().toISOString()
+  const activeCount  = flows.filter(f => f.expires_at > now).length
+  const expiredCount = flows.length - activeCount
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1a0a2e] via-[#16213e] to-[#0f3460] text-white">
       <TopNav />
       <main className="px-6 py-10">
         <div className="mx-auto max-w-6xl space-y-8">
+
+          {/* Header */}
           <section className="rounded-[2rem] border border-white/10 bg-white/5 p-10 backdrop-blur-2xl shadow-2xl">
-            <p className="text-sm uppercase tracking-[0.32em] text-white/50">Analytics</p>
-            <h1 className="mt-3 text-3xl font-bold">Invitation performance</h1>
-            <p className="mt-4 text-white/70">Track engagement, responses, and guest preferences across all your invitations.</p>
-          </section>
-
-          <section className="grid gap-4 md:grid-cols-4">
-            {[
-              { label: 'Total Invitations', value: String(invitations.length) },
-              { label: 'Total Views', value: String(totalViews) },
-              { label: 'Total Responses', value: String(totalResponses) },
-              { label: 'Acceptance Rate', value: `${overallAcceptanceRate}%` },
-            ].map(card => (
-              <div key={card.label} className="rounded-3xl border border-white/10 bg-white/5 p-6">
-                <p className="text-sm uppercase tracking-[0.3em] text-white/50">{card.label}</p>
-                <p className="mt-4 text-3xl font-semibold">{card.value}</p>
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-sm uppercase tracking-[0.32em] text-white/50">Flow Management</p>
+                <h1 className="mt-3 text-3xl font-bold">Your relationship flows</h1>
+                <p className="mt-2 text-white/60">
+                  {flows.length} flow{flows.length !== 1 ? 's' : ''} · {activeCount} active · {expiredCount} expired
+                </p>
               </div>
-            ))}
-          </section>
-
-          <section className="rounded-3xl border border-white/10 bg-white/5 p-6">
-            <h2 className="text-xl font-semibold mb-4">Invitation breakdown</h2>
-            <div className="space-y-2">
-              {invitationsWithAnalytics.length === 0 ? (
-                <p className="text-white/60">No invitations yet.</p>
-              ) : (
-                invitationsWithAnalytics.map(invitation => (
-                  <div key={invitation.id} className="rounded-3xl border border-white/10 bg-black/20 overflow-hidden">
-                    <button
-                      type="button"
-                      onClick={() => setExpandedId(expandedId === invitation.id ? null : invitation.id)}
-                      className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition text-left"
-                    >
-                      <div className="flex-1">
-                        <p className="font-semibold text-white">{invitation.slug}</p>
-                        <p className="text-white/60 text-sm mt-1">
-                          {invitation.sender_name} → {invitation.recipient_name}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-6 text-sm">
-                        <div>
-                          <p className="text-white/70">Views</p>
-                          <p className="font-semibold">{invitation.analytics.views}</p>
-                        </div>
-                        <div>
-                          <p className="text-white/70">Responses</p>
-                          <p className="font-semibold">{invitation.analytics.responses}</p>
-                        </div>
-                        <div>
-                          <p className="text-white/70">Accepted</p>
-                          <p className="font-semibold text-rose-300">{invitation.analytics.accepted}</p>
-                        </div>
-                        <ChevronDown
-                          size={18}
-                          className={`transition-transform ${expandedId === invitation.id ? 'rotate-180' : ''}`}
-                        />
-                      </div>
-                    </button>
-
-                    {expandedId === invitation.id && invitation.analytics.allResponses.length > 0 && (
-                      <div className="border-t border-white/10 p-4 space-y-3">
-                        <h3 className="font-semibold text-white mb-4">Guest responses</h3>
-                        {invitation.analytics.allResponses.map((response, idx) => (
-                          <div key={response.id} className="rounded-2xl border border-white/5 bg-black/30 p-4 text-sm">
-                            <div className="flex justify-between items-start gap-4">
-                              <div className="flex-1">
-                                <p className="text-white/80">
-                                  <span className={`font-semibold ${response.accepted ? 'text-rose-300' : 'text-gray-400'}`}>
-                                    {response.accepted ? '✓ Accepted' : '✗ Declined'}
-                                  </span>
-                                </p>
-                                <div className="mt-2 text-white/60 space-y-1 text-xs">
-                                  {response.selected_place && <p>📍 {response.selected_place}</p>}
-                                  {response.selected_food && response.selected_food.length > 0 && (
-                                    <p>🍽️ {response.selected_food.join(', ')}</p>
-                                  )}
-                                  {response.selected_dress && (
-                                    <p className="flex items-center gap-1">
-                                      👗
-                                      <span
-                                        className="inline-block w-4 h-4 rounded-full border border-white/20"
-                                        style={{ backgroundColor: response.selected_dress }}
-                                      />
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="text-white/50 text-xs whitespace-nowrap">
-                                {new Date(response.submitted_at).toLocaleString()}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {expandedId === invitation.id && invitation.analytics.allResponses.length === 0 && (
-                      <div className="border-t border-white/10 p-4 text-white/60 text-sm">
-                        No responses yet.
-                      </div>
-                    )}
-                  </div>
-                ))
-              )}
+              <Link
+                to="/dashboard/flows/new"
+                className="inline-flex items-center gap-2 rounded-full bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-400"
+              >
+                <Plus size={14} /> Create flow
+              </Link>
             </div>
           </section>
+
+          {/* Flow list */}
+          <section className="space-y-3">
+            {flowsQuery.isLoading ? (
+              <p className="text-white/60">Loading flows…</p>
+            ) : flows.length === 0 ? (
+              <div className="rounded-3xl border border-white/10 bg-white/5 p-10 text-center text-white/60">
+                <p className="text-4xl mb-4">❤️</p>
+                <p className="font-semibold text-white mb-1">No flows yet</p>
+                <p className="text-sm">Create your first relationship flow above.</p>
+              </div>
+            ) : (
+              flows.map(flow => {
+                const isActive = flow.expires_at > now
+                return (
+                  <div key={flow.id} className="rounded-3xl border border-white/10 bg-white/5 p-5">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-semibold text-white truncate">{flow.title}</p>
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${isActive ? 'bg-emerald-500/20 text-emerald-300' : 'bg-white/10 text-white/40'}`}>
+                            {isActive ? 'Active' : 'Expired'}
+                          </span>
+                        </div>
+                        {flow.subtitle && (
+                          <p className="text-white/50 text-sm mt-0.5 truncate">{flow.subtitle}</p>
+                        )}
+                        <p className="text-white/30 text-xs mt-1">
+                          /flow/{flow.slug} · Expires {new Date(flow.expires_at).toLocaleDateString()}
+                        </p>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex flex-wrap gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleCopyUrl(flow.slug)}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5 text-xs text-white/70 hover:bg-white/10 transition"
+                        >
+                          <Copy size={12} />
+                          {copied === flow.slug ? 'Copied!' : 'Copy URL'}
+                        </button>
+
+                        <Link
+                          to={`/dashboard/flows/${flow.id}/responses`}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5 text-xs text-white/70 hover:bg-white/10 transition"
+                        >
+                          <Eye size={12} /> Responses
+                        </Link>
+
+                        <Link
+                          to={`/dashboard/flows/${flow.id}/edit`}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5 text-xs text-white/70 hover:bg-white/10 transition"
+                        >
+                          <Pencil size={12} /> Edit
+                        </Link>
+
+                        <button
+                          type="button"
+                          onClick={() => duplicateMutation.mutate({ id: flow.id })}
+                          disabled={duplicateMutation.isPending}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5 text-xs text-white/70 hover:bg-white/10 transition disabled:opacity-40"
+                          title="Duplicate flow"
+                        >
+                          <CopyPlus size={12} /> Duplicate
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => confirmDelete(flow.id)}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/30 px-3 py-1.5 text-xs text-rose-400 hover:bg-rose-500/10 transition"
+                          title="Delete flow"
+                        >
+                          <Trash2 size={12} /> Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </section>
+
         </div>
       </main>
     </div>

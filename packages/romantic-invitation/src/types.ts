@@ -1,62 +1,62 @@
-// ─── Core data shape for the invitation ───────────────────────────────────────
-// All fields are optional so we can build up state step-by-step
-export interface InvitationData {
-  title?: string
-  welcomeMessage?: string
-  mainQuestion?: string
-  senderName: string
-  recipientName: string
-  date: string          // ISO date string: "2024-02-14"
-  time: string          // "19:30"
-  place: string         // One of the predefined place options
-  food: string[]        // Multiple food choices allowed
-  dressColor: string    // Hex color chosen from the palette
-  theme?: string
-  animation?: string
-  imageUrl?: string
-  musicUrl?: string
-  loveLetter: string    // Free-form message
-}
+export type QuestionType =
+  | 'text' | 'textarea' | 'email' | 'phone' | 'number'
+  | 'date' | 'time'
+  | 'radio' | 'checkbox' | 'select'
 
-export interface InvitationRecord extends InvitationData {
+export type FlowTheme = 'rose' | 'violet' | 'amber' | 'emerald'
+
+export interface FlowRecord {
   id: string
+  title: string
+  subtitle: string | null
+  description: string | null
   slug: string
   user_id: string
-  is_published: boolean
+  theme: FlowTheme
+  cover_image: string | null
   expires_at: string
   created_at: string
   updated_at: string | null
 }
 
-export interface InvitationResponseData {
-  invitation_id: string
-  accepted: boolean
-  selected_date?: string
-  selected_place?: string
-  selected_food?: string[]
-  selected_dress?: string
+export interface FlowQuestion {
+  id: string
+  flow_id: string
+  type: QuestionType
+  label: string
+  options: string[] | null   // only used for radio / checkbox / select
+  required: boolean
+  sort_order: number
+}
+
+export interface FlowWithQuestions extends FlowRecord {
+  questions: FlowQuestion[]
+}
+
+export interface FlowResponseRecord {
+  id: string
+  flow_id: string
   submitted_at: string
   device: string
   browser: string
 }
 
-export interface InvitationResponseRecord extends InvitationResponseData {
+export interface FlowAnswer {
   id: string
+  response_id: string
+  question_id: string
+  answer: string  // checkbox answers are JSON.stringify of string[]
 }
 
-// Each step in the wizard has a key and display metadata
-export interface Step {
-  id: number
-  key: keyof InvitationData | 'summary'
-  title: string
-  subtitle: string
-  emoji: string
+export interface FlowResponseWithAnswers extends FlowResponseRecord {
+  answers: FlowAnswer[]
 }
 
-// A choice option used in ChoiceCard grids
-export interface ChoiceOption {
-  value: string
+// Transient question shape used only in the builder UI (not persisted directly)
+export interface QuestionDraft {
+  _id: string       // temp React key — not the DB id
+  type: QuestionType
   label: string
-  emoji: string
-  description?: string
+  required: boolean
+  options: string[]
 }
