@@ -142,7 +142,8 @@ export function FlowBuilderPage() {
     setSaving(false)
 
     if (result.error) {
-      setError((result.error as Error)?.message ?? String(result.error))
+      const e = result.error as { issues?: { message: string }[]; message?: string }
+      setError(e.issues?.[0]?.message ?? e.message ?? 'Something went wrong. Please try again.')
       return
     }
 

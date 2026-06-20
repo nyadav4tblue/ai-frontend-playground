@@ -44,10 +44,16 @@ export function PublicFlowPage() {
 
   const [step, setStep]           = useState(0)
   const [direction, setDirection] = useState<1 | -1>(1)
-  const [answers, setAnswers]     = useState<Record<string, string>>({})
+  const [answers, setAnswers]     = useState<Record<string, string>>(() => {
+    if (!slug) return {}
+    try { return JSON.parse(localStorage.getItem(`flow_answers_${slug}`) ?? '{}') } catch { return {} }
+  })
   const [error, setError]         = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
+  const [submitted, setSubmitted] = useState(() => {
+    if (!slug) return false
+    return localStorage.getItem(`flow_submitted_${slug}`) === '1'
+  })
   const [submitError, setSubmitError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -111,6 +117,10 @@ export function PublicFlowPage() {
 
     setSubmitting(false)
     if (e) { setSubmitError((e as Error)?.message ?? 'Submission failed. Please try again.'); return }
+    if (slug) {
+      localStorage.setItem(`flow_submitted_${slug}`, '1')
+      localStorage.setItem(`flow_answers_${slug}`, JSON.stringify(answers))
+    }
     setSubmitted(true)
   }
 
@@ -165,71 +175,74 @@ export function PublicFlowPage() {
   // ── Welcome screen ────────────────────────────────────────────────────────
 
   if (!started) return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1a0a2e] via-[#16213e] to-[#0f3460] text-white flex items-center justify-center px-6 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-[#1a0a2e] via-[#16213e] to-[#0f3460] text-white flex items-center justify-center px-5 py-10">
       <motion.div
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ type: 'spring', stiffness: 200 }}
-        className="w-full max-w-md space-y-6"
+        transition={{ type: 'spring', stiffness: 200, damping: 22 }}
+        className="w-full max-w-sm overflow-hidden rounded-[2rem]"
+        style={{ boxShadow: `0 0 80px ${accent}20, 0 0 0 1px ${accent}25` }}
       >
-        {/* Cover image */}
-        {flow.cover_image && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.97 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.1 }}
-            className="w-full h-48 rounded-[2rem] overflow-hidden"
-          >
-            <img
+        {/* Cover image — inside the card */}
+        {flow.cover_image ? (
+          <div className="w-full h-56 overflow-hidden">
+            <motion.img
               src={flow.cover_image}
               alt="Cover"
+              initial={{ scale: 1.06 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.8 }}
               className="w-full h-full object-cover"
               onError={e => (e.currentTarget.parentElement!.style.display = 'none')}
             />
-          </motion.div>
+          </div>
+        ) : (
+          /* Decorative gradient header when no image */
+          <div className="w-full h-28" style={{ background: `linear-gradient(160deg, ${accent}30, ${accent}08)` }} />
         )}
 
-        {/* Title card */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-          className="rounded-[2rem] border border-white/10 bg-white/5 p-10 text-center backdrop-blur-2xl shadow-2xl space-y-4"
-        >
+        {/* Card body */}
+        <div className="bg-[#0e0c1f] px-8 pt-8 pb-10 text-center space-y-5">
           <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: 'spring', stiffness: 300, delay: 0.2 }}
-            className="text-5xl"
+            initial={{ scale: 0, rotate: -20 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: 'spring', stiffness: 280, delay: 0.18 }}
+            className="text-5xl -mt-12 mb-2 drop-shadow-lg"
           >
             ❤️
           </motion.div>
 
-          <h1 className="text-3xl font-bold">{flow.title}</h1>
-
-          {(flow.subtitle || flow.description) && (
-            <p className="text-white/60 text-base leading-relaxed">
-              {flow.subtitle || flow.description}
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold tracking-tight" style={{ fontFamily: "'Georgia', serif" }}>
+              {flow.title}
+            </h1>
+            <p className="text-white/55 text-[15px] leading-relaxed">
+              {flow.subtitle || flow.description || 'Someone special created this experience for you.'}
             </p>
-          )}
+          </div>
 
-          {!flow.subtitle && !flow.description && (
-            <p className="text-white/40 text-sm">Someone special created this experience for you.</p>
-          )}
+          <div className="flex items-center gap-3 opacity-20 py-1">
+            <div className="flex-1 h-px" style={{ background: accent }} />
+            <span className="text-xs" style={{ color: accent }}>❧</span>
+            <div className="flex-1 h-px" style={{ background: accent }} />
+          </div>
 
-          <motion.button
-            type="button"
-            onClick={() => setStarted(true)}
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.97 }}
-            style={{ backgroundColor: accent }}
-            className="mt-2 inline-flex items-center gap-2 rounded-full px-8 py-3 text-sm font-semibold text-white shadow-lg transition"
-          >
-            Start ❤️
-          </motion.button>
-
-          <p className="text-white/30 text-xs">{flow.questions.length} question{flow.questions.length !== 1 ? 's' : ''}</p>
-        </motion.div>
+          <div>
+            <motion.button
+              type="button"
+              onClick={() => setStarted(true)}
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.97 }}
+              style={{ backgroundColor: accent }}
+              className="w-full rounded-2xl py-4 text-base font-semibold text-white shadow-lg transition"
+            >
+              Begin ❤️
+            </motion.button>
+            <p className="mt-3 text-white/25 text-xs tracking-wide">
+              {flow.questions.length} question{flow.questions.length !== 1 ? 's' : ''} · takes about 1 min
+            </p>
+          </div>
+        </div>
       </motion.div>
     </div>
   )
@@ -240,30 +253,31 @@ export function PublicFlowPage() {
   const question  = questions[step]
   const isFirst   = step === 0
   const isLast    = step === questions.length - 1
-  const progress  = ((step) / questions.length) * 100
+  const progress  = ((step + 1) / questions.length) * 100
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1a0a2e] via-[#16213e] to-[#0f3460] text-white flex flex-col">
 
-      {/* Progress bar */}
-      <div className="h-1 w-full bg-white/10">
+      {/* Progress bar — thicker, more visible */}
+      <div className="h-[3px] w-full bg-white/8">
         <motion.div
-          className="h-full"
+          className="h-full rounded-full"
           style={{ backgroundColor: accent }}
           initial={{ width: 0 }}
           animate={{ width: `${progress}%` }}
-          transition={{ type: 'spring', stiffness: 80, damping: 20 }}
+          transition={{ type: 'spring', stiffness: 70, damping: 18 }}
         />
       </div>
 
-      {/* Flow title header */}
-      <div className="px-6 py-5 border-b border-white/5">
-        <p className="text-sm text-white/40 text-center tracking-wide">❤️ {flow.title}</p>
+      {/* Top bar */}
+      <div className="px-6 pt-4 pb-3 flex items-center justify-between">
+        <p className="text-xs text-white/30 tracking-wide">❤️ {flow.title}</p>
+        <p className="text-xs text-white/30 tabular-nums">{step + 1} / {questions.length}</p>
       </div>
 
-      {/* Question area */}
-      <div className="flex-1 flex items-center justify-center px-6 py-12 overflow-hidden">
-        <div className="w-full max-w-md">
+      {/* Question card — centered, contained */}
+      <div className="flex-1 flex items-center justify-center px-5 py-6 overflow-hidden">
+        <div className="w-full max-w-sm">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={step}
@@ -271,69 +285,101 @@ export function PublicFlowPage() {
               initial="initial"
               animate="animate"
               exit="exit"
-              className="space-y-8"
             >
-              <div className="space-y-4">
-                <div className="flex items-baseline gap-3">
-                  <span className="font-bold text-sm tabular-nums" style={{ color: accent }}>
-                    {step + 1}
-                    <span className="text-white/30 font-normal"> / {questions.length}</span>
-                  </span>
+              {/* Card */}
+              <div
+                className="rounded-[2rem] overflow-hidden"
+                style={{ boxShadow: `0 0 50px ${accent}15, 0 0 0 1px ${accent}20` }}
+              >
+                {/* Question header */}
+                <div className="bg-[#0e0c1f] px-7 pt-8 pb-6" style={{ borderBottom: `1px solid ${accent}15` }}>
+                  {/* Step badge */}
+                  <div className="flex items-center gap-2 mb-4">
+                    <span
+                      className="text-xs font-bold px-2.5 py-1 rounded-full"
+                      style={{ backgroundColor: `${accent}20`, color: accent }}
+                    >
+                      {step + 1} of {questions.length}
+                    </span>
+                    {question.required && (
+                      <span className="text-xs text-white/30">required</span>
+                    )}
+                  </div>
+                  <h2 className="text-xl font-bold leading-snug text-white">
+                    {question.label}
+                  </h2>
                 </div>
-                <h2 className="text-2xl font-bold leading-snug">
-                  {question.label}
-                  {question.required && <span className="ml-1" style={{ color: accent }}>*</span>}
-                </h2>
+
+                {/* Input area */}
+                <div className="bg-[#090818] px-7 py-6">
+                  <QuestionInput
+                    question={question}
+                    value={answers[question.id] ?? ''}
+                    accent={accent}
+                    onChange={val => setAnswer(question.id, val)}
+                    onToggleCheckbox={opt => toggleCheckbox(question.id, opt)}
+                    onEnter={isLast ? handleSubmit : handleNext}
+                  />
+
+                  {error && (
+                    <motion.p
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-3 text-sm"
+                      style={{ color: accent }}
+                    >
+                      ↑ This field is required
+                    </motion.p>
+                  )}
+                  {submitError && (
+                    <p className="mt-3 text-sm text-rose-400">{submitError}</p>
+                  )}
+                </div>
               </div>
-
-              <QuestionInput
-                question={question}
-                value={answers[question.id] ?? ''}
-                accent={accent}
-                onChange={val => setAnswer(question.id, val)}
-                onToggleCheckbox={opt => toggleCheckbox(question.id, opt)}
-                onEnter={isLast ? handleSubmit : handleNext}
-              />
-
-              {error && (
-                <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-sm text-rose-400">
-                  {error}
-                </motion.p>
-              )}
-
-              {submitError && <p className="text-sm text-rose-400">{submitError}</p>}
             </motion.div>
           </AnimatePresence>
         </div>
       </div>
 
       {/* Navigation */}
-      <div className="px-6 py-6 border-t border-white/5 flex items-center justify-between max-w-md mx-auto w-full">
+      <div className="px-5 py-5 flex items-center justify-between max-w-sm mx-auto w-full">
         <button
           type="button"
           onClick={handleBack}
           disabled={isFirst}
-          className="flex items-center gap-2 text-sm text-white/40 hover:text-white/70 disabled:opacity-0 transition"
+          className="flex items-center gap-1.5 text-sm text-white/35 hover:text-white/60 disabled:opacity-0 transition px-3 py-2"
         >
-          <ArrowLeft size={16} /> Back
+          <ArrowLeft size={15} /> Back
         </button>
 
-        <button
+        <motion.button
           type="button"
           onClick={isLast ? handleSubmit : handleNext}
           disabled={submitting}
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
           style={{ backgroundColor: accent }}
-          className="flex items-center gap-2 px-6 py-3 rounded-full text-white text-sm font-semibold transition disabled:opacity-60 hover:opacity-90"
+          className="flex items-center gap-2 px-7 py-3 rounded-2xl text-white text-sm font-semibold transition disabled:opacity-60"
         >
-          {submitting ? 'Submitting…' : isLast ? 'Submit' : 'Next'}
-          {!isLast && !submitting && <ArrowRight size={16} />}
-        </button>
+          {submitting ? 'Submitting…' : isLast ? 'Submit ❤️' : 'Next'}
+          {!isLast && !submitting && <ArrowRight size={15} />}
+        </motion.button>
       </div>
     </div>
   )
 }
 
 // ─── SuccessPage ──────────────────────────────────────────────────────────────
+
+const HEARTS = [
+  { left: '5%',  delay: 0,    dur: 7,   size: 22, opacity: 0.22 },
+  { left: '18%', delay: 1.4,  dur: 9,   size: 14, opacity: 0.14 },
+  { left: '32%', delay: 0.6,  dur: 8,   size: 28, opacity: 0.18 },
+  { left: '50%', delay: 2.2,  dur: 10,  size: 16, opacity: 0.12 },
+  { left: '64%', delay: 0.9,  dur: 7.5, size: 24, opacity: 0.20 },
+  { left: '80%', delay: 1.8,  dur: 9.5, size: 18, opacity: 0.16 },
+  { left: '92%', delay: 0.3,  dur: 8.5, size: 20, opacity: 0.19 },
+]
 
 function SuccessPage({ flow, answers, accent }: { flow: FlowWithQuestions; answers: Record<string, string>; accent: string }) {
   function formatAnswer(qId: string, type: QuestionType): string {
@@ -345,84 +391,164 @@ function SuccessPage({ flow, answers, accent }: { flow: FlowWithQuestions; answe
     return raw
   }
 
+  const answeredQuestions = flow.questions.filter(q => answers[q.id])
+  const dateStr = new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })
+  const serif = "'Georgia', 'Times New Roman', serif"
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1a0a2e] via-[#16213e] to-[#0f3460] text-white flex items-center justify-center px-6 py-12">
-      <div className="w-full max-w-md space-y-6">
+    <div className="relative min-h-screen bg-gradient-to-br from-[#1a0a2e] via-[#16213e] to-[#0f3460] text-white flex items-center justify-center px-4 py-16 overflow-hidden">
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: 'spring', stiffness: 200 }}
-          className="rounded-[2rem] border border-white/10 bg-white/5 p-10 text-center backdrop-blur-2xl shadow-2xl space-y-4"
-        >
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: 'spring', stiffness: 300, delay: 0.1 }}
-            className="text-6xl"
-          >
-            ❤️
-          </motion.div>
-          <h1 className="text-3xl font-bold">Thank you</h1>
-          <p className="text-white/70">Your response has been submitted successfully.</p>
-        </motion.div>
+      <style>{`
+        @keyframes floatUp {
+          0%   { transform: translateY(0) rotate(-8deg) scale(1); opacity: var(--ho); }
+          60%  { opacity: calc(var(--ho) * 0.7); }
+          100% { transform: translateY(-100vh) rotate(12deg) scale(0.7); opacity: 0; }
+        }
+        .fh { animation: floatUp var(--dur) ease-in infinite; animation-delay: var(--del); position: absolute; bottom: -20px; pointer-events: none; user-select: none; }
+        @keyframes pulse-glow {
+          0%, 100% { opacity: 0.6; transform: scale(1); }
+          50%       { opacity: 1;   transform: scale(1.08); }
+        }
+        .heart-seal { animation: pulse-glow 2.4s ease-in-out infinite; }
+      `}</style>
 
-        {/* Answer summary */}
-        {flow.questions.some(q => answers[q.id]) && (
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25 }}
-            className="rounded-3xl border border-white/10 bg-white/5 p-6 space-y-4"
-          >
-            <div className="flex items-center justify-between">
-              <p className="text-xs uppercase tracking-[0.3em] text-white/40">Your answers</p>
-              <p className="text-xs text-white/30">{flow.title}</p>
+      {HEARTS.map((h, i) => (
+        <div key={i} className="fh" style={{ left: h.left, fontSize: `${h.size}px`, '--ho': h.opacity, '--dur': `${h.dur}s`, '--del': `${h.delay}s` } as React.CSSProperties}>❤️</div>
+      ))}
+
+      {/* Soft radial glow behind card */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="w-[480px] h-[480px] rounded-full opacity-10" style={{ background: `radial-gradient(circle, ${accent} 0%, transparent 70%)` }} />
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 50, scale: 0.93 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ type: 'spring', stiffness: 160, damping: 20 }}
+        className="relative w-full max-w-md z-10"
+      >
+        {/* Card with glowing border */}
+        <div className="rounded-[2rem] overflow-hidden" style={{ boxShadow: `0 0 60px ${accent}22, 0 0 0 1px ${accent}33` }}>
+
+          {/* ── Header ─────────────────────────────────────── */}
+          <div className="relative text-center px-8 pt-12 pb-8" style={{ background: `linear-gradient(160deg, ${accent}28 0%, ${accent}10 40%, transparent 100%)` }}>
+
+            {/* Top ornament row */}
+            <div className="flex items-center gap-3 mb-8 opacity-25">
+              <div className="flex-1 h-px" style={{ background: accent }} />
+              <span className="text-xs tracking-[0.4em]" style={{ color: accent }}>✦ ✦ ✦</span>
+              <div className="flex-1 h-px" style={{ background: accent }} />
             </div>
-            <div className="space-y-3">
-              {flow.questions.map(q => (
-                <div key={q.id} className="flex flex-col gap-0.5">
-                  <span className="text-xs text-white/50">{q.label}</span>
-                  <span className="text-sm text-white/90">{formatAnswer(q.id, q.type)}</span>
-                </div>
+
+            {/* Pulsing heart seal */}
+            <motion.div
+              initial={{ scale: 0, rotate: -30 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: 'spring', stiffness: 260, damping: 18, delay: 0.15 }}
+              className="heart-seal text-6xl mb-5 inline-block"
+            >
+              ❤️
+            </motion.div>
+
+            <motion.h1
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.28 }}
+              className="text-4xl font-bold tracking-wide text-white mb-2"
+              style={{ fontFamily: serif }}
+            >
+              Thank You
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.38 }}
+              className="text-sm font-semibold tracking-[0.2em] uppercase"
+              style={{ color: accent }}
+            >
+              {flow.title}
+            </motion.p>
+
+            {flow.subtitle && (
+              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.44 }} className="text-sm text-white/50 mt-1">
+                {flow.subtitle}
+              </motion.p>
+            )}
+
+            {/* Divider */}
+            <div className="flex items-center gap-3 mt-8 opacity-20">
+              <div className="flex-1 h-px" style={{ background: accent }} />
+              <span className="text-base" style={{ color: accent }}>❧</span>
+              <div className="flex-1 h-px" style={{ background: accent }} />
+            </div>
+          </div>
+
+          {/* ── Body ───────────────────────────────────────── */}
+          <div className="bg-[#0c0b1e] px-8 pb-2 pt-6">
+            {answeredQuestions.length > 0 && (
+              <div className="space-y-0">
+                {answeredQuestions.map((q, i) => (
+                  <motion.div
+                    key={q.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 + i * 0.07 }}
+                    className="py-4 border-b last:border-b-0"
+                    style={{ borderColor: `${accent}18` }}
+                  >
+                    <p className="text-[11px] uppercase tracking-[0.22em] mb-1.5" style={{ color: `${accent}80` }}>
+                      {q.label}
+                    </p>
+                    <p className="text-[17px] leading-snug text-white/95" style={{ fontFamily: serif }}>
+                      {formatAnswer(q.id, q.type)}
+                    </p>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* ── Footer ─────────────────────────────────────── */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+            className="bg-[#0c0b1e] px-8 pt-4 pb-8"
+          >
+            {/* Divider */}
+            <div className="flex items-center gap-3 mb-5 opacity-20">
+              <div className="flex-1 h-px" style={{ background: accent }} />
+              <span className="text-base" style={{ color: accent }}>❧</span>
+              <div className="flex-1 h-px" style={{ background: accent }} />
+            </div>
+
+            <p className="text-center text-[12px] text-white/25 tracking-[0.22em] uppercase mb-5">{dateStr}</p>
+
+            {/* Share buttons */}
+            <div className="grid grid-cols-3 gap-2.5">
+              {[
+                { icon: <MessageCircle size={16} />, label: 'WhatsApp' },
+                { icon: <Mail size={16} />,          label: 'Email'    },
+                { icon: <Download size={16} />,      label: 'Save'     },
+              ].map(btn => (
+                <button
+                  key={btn.label}
+                  type="button"
+                  disabled
+                  className="flex flex-col items-center gap-2 py-3.5 rounded-2xl text-xs font-medium cursor-not-allowed"
+                  style={{ border: `1px solid ${accent}25`, color: `${accent}50`, background: `${accent}0a` }}
+                >
+                  {btn.icon}
+                  {btn.label}
+                </button>
               ))}
             </div>
-            <p className="text-xs text-white/25 pt-1">
-              Submitted {new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })}
-            </p>
+            <p className="text-center text-[10px] mt-3 tracking-wider" style={{ color: `${accent}30` }}>Sharing options coming soon</p>
           </motion.div>
-        )}
 
-        {/* Share placeholder */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="space-y-3"
-        >
-          <p className="text-center text-xs text-white/30 uppercase tracking-widest">Share</p>
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { icon: <MessageCircle size={18} />, label: 'WhatsApp' },
-              { icon: <Mail size={18} />,          label: 'Email'    },
-              { icon: <Download size={18} />,      label: 'Save'     },
-            ].map(btn => (
-              <button
-                key={btn.label}
-                type="button"
-                disabled
-                title="Coming soon"
-                className="flex flex-col items-center gap-2 py-4 rounded-3xl border border-white/10 bg-white/5 text-white/25 text-xs cursor-not-allowed"
-              >
-                {btn.icon}
-                {btn.label}
-              </button>
-            ))}
-          </div>
-          <p className="text-center text-xs text-white/20">Sharing options coming soon</p>
-        </motion.div>
-
-      </div>
+        </div>
+      </motion.div>
     </div>
   )
 }
@@ -438,12 +564,26 @@ interface QuestionInputProps {
   onEnter:          () => void
 }
 
-const INPUT_CLASS =
-  'w-full rounded-2xl border border-white/15 bg-white/5 px-5 py-4 text-white text-lg outline-none focus:border-rose-400 placeholder:text-white/25 transition [color-scheme:dark]'
+const INPUT_BASE =
+  'w-full rounded-2xl border bg-white/5 px-5 py-4 text-white text-lg outline-none placeholder:text-white/25 transition [color-scheme:dark]'
+
+function useAccentFocus(accent: string) {
+  const [focused, setFocused] = useState(false)
+  const borderStyle = { borderColor: focused ? accent : 'rgba(255,255,255,0.15)' }
+  const handlers = {
+    onFocus: () => setFocused(true),
+    onBlur:  () => setFocused(false),
+  }
+  return { borderStyle, handlers }
+}
 
 function QuestionInput({ question, value, accent, onChange, onToggleCheckbox, onEnter }: QuestionInputProps) {
   const opts = question.options ?? []
-  const checkboxSelected: string[] = JSON.parse(value || '[]')
+  const checkboxSelected: string[] = question.type === 'checkbox'
+    ? (() => { try { return JSON.parse(value || '[]') } catch { return [] } })()
+    : []
+
+  const { borderStyle, handlers } = useAccentFocus(accent)
 
   function handleKey(e: React.KeyboardEvent) {
     if (e.key === 'Enter' && question.type !== 'textarea') onEnter()
@@ -458,24 +598,26 @@ function QuestionInput({ question, value, accent, onChange, onToggleCheckbox, on
           rows={4}
           autoFocus
           placeholder="Type your answer…"
-          className={`${INPUT_CLASS} resize-none`}
+          className={`${INPUT_BASE} resize-none`}
+          style={borderStyle}
+          {...handlers}
         />
       )
 
     case 'date':
-      return <input type="date" value={value} onChange={e => onChange(e.target.value)} autoFocus className={INPUT_CLASS} />
+      return <input type="date" value={value} onChange={e => onChange(e.target.value)} autoFocus className={INPUT_BASE} style={borderStyle} {...handlers} />
 
     case 'time':
-      return <input type="time" value={value} onChange={e => onChange(e.target.value)} autoFocus className={INPUT_CLASS} />
+      return <input type="time" value={value} onChange={e => onChange(e.target.value)} autoFocus className={INPUT_BASE} style={borderStyle} {...handlers} />
 
     case 'number':
-      return <input type="number" value={value} onChange={e => onChange(e.target.value)} onKeyDown={handleKey} autoFocus placeholder="0" className={INPUT_CLASS} />
+      return <input type="number" value={value} onChange={e => onChange(e.target.value)} onKeyDown={handleKey} autoFocus placeholder="0" className={INPUT_BASE} style={borderStyle} {...handlers} />
 
     case 'email':
-      return <input type="email" value={value} onChange={e => onChange(e.target.value)} onKeyDown={handleKey} autoFocus placeholder="you@example.com" className={INPUT_CLASS} />
+      return <input type="email" value={value} onChange={e => onChange(e.target.value)} onKeyDown={handleKey} autoFocus placeholder="you@example.com" className={INPUT_BASE} style={borderStyle} {...handlers} />
 
     case 'phone':
-      return <input type="tel" value={value} onChange={e => onChange(e.target.value)} onKeyDown={handleKey} autoFocus placeholder="+1 234 567 890" className={INPUT_CLASS} />
+      return <input type="tel" value={value} onChange={e => onChange(e.target.value)} onKeyDown={handleKey} autoFocus placeholder="+1 234 567 890" className={INPUT_BASE} style={borderStyle} {...handlers} />
 
     case 'radio':
       return (
@@ -539,7 +681,7 @@ function QuestionInput({ question, value, accent, onChange, onToggleCheckbox, on
 
     case 'select':
       return (
-        <select value={value} onChange={e => onChange(e.target.value)} autoFocus className={INPUT_CLASS}>
+        <select value={value} onChange={e => onChange(e.target.value)} autoFocus className={INPUT_BASE} style={borderStyle} {...handlers}>
           <option value="" disabled>Choose an option…</option>
           {opts.map(opt => <option key={opt} value={opt}>{opt}</option>)}
         </select>
@@ -554,7 +696,9 @@ function QuestionInput({ question, value, accent, onChange, onToggleCheckbox, on
           onKeyDown={handleKey}
           autoFocus
           placeholder="Type your answer…"
-          className={INPUT_CLASS}
+          className={INPUT_BASE}
+          style={borderStyle}
+          {...handlers}
         />
       )
   }
