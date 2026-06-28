@@ -388,6 +388,22 @@ function SuccessPage({ flow, answers, accent }: { flow: FlowWithQuestions; answe
     if (type === 'checkbox') {
       try { return (JSON.parse(raw) as string[]).join(', ') } catch { return raw }
     }
+    if (type === 'date') {
+      // raw is YYYY-MM-DD — build a local date so the day doesn't shift across timezones
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw)
+      if (m) {
+        const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
+        return d.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+      }
+    }
+    if (type === 'time') {
+      const m = /^(\d{1,2}):(\d{2})/.exec(raw)
+      if (m) {
+        const d = new Date()
+        d.setHours(Number(m[1]), Number(m[2]), 0, 0)
+        return d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+      }
+    }
     return raw
   }
 
@@ -485,24 +501,26 @@ function SuccessPage({ flow, answers, accent }: { flow: FlowWithQuestions; answe
           </div>
 
           {/* ── Body ───────────────────────────────────────── */}
-          <div className="bg-[#0c0b1e] px-8 pb-2 pt-6">
+          <div className="bg-[#0c0b1e] px-8 pb-2 pt-9">
             {answeredQuestions.length > 0 && (
-              <div className="space-y-0">
+              <div className="space-y-9">
                 {answeredQuestions.map((q, i) => (
                   <motion.div
                     key={q.id}
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 + i * 0.07 }}
-                    className="py-4 border-b last:border-b-0"
-                    style={{ borderColor: `${accent}18` }}
+                    transition={{ delay: 0.4 + i * 0.1 }}
+                    className="text-center"
                   >
-                    <p className="text-[11px] uppercase tracking-[0.22em] mb-1.5" style={{ color: `${accent}80` }}>
+                    <p className="text-[14px] italic text-white/45 mb-2.5" style={{ fontFamily: serif }}>
                       {q.label}
                     </p>
-                    <p className="text-[17px] leading-snug text-white/95" style={{ fontFamily: serif }}>
+                    <p className="text-[26px] leading-tight text-white" style={{ fontFamily: serif }}>
                       {formatAnswer(q.id, q.type)}
                     </p>
+                    {i < answeredQuestions.length - 1 && (
+                      <span className="mt-7 block text-sm opacity-25" style={{ color: accent }}>✦</span>
+                    )}
                   </motion.div>
                 ))}
               </div>

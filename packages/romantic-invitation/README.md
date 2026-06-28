@@ -64,3 +64,28 @@ src/
 - **Framer Motion variants** — stagger children, page transitions with `AnimatePresence`
 - **Custom hooks** — `useInvitation` separates state from UI
 - **Component composition** — `WizardPage` renders step content via a switch
+
+
+## 🎨 Enhanced Romantic Design System
+
+### Design Improvements
+The application has been enhanced with a comprehensive romantic design system including:
+
+- **Enhanced Glassmorphism** - Improved frosted glass effects with better blur and saturation
+- **Romantic Color Palette** - Extended colors including rose, blush, coral, lavender, and gold
+- **Animated Elements** - Floating hearts, gentle pulses, heartbeat animations
+- **Gradient Effects** - Text gradients, border gradients, and background overlays
+- **Enhanced Typography** - Playfair Display for romantic headings with gradient effects
+
+### New Components
+- `EnhancedFloatingHearts` - Advanced heart animations with multiple styles
+- `RomanticBackground` - Layered background with light effects
+- `EnhancedNavigation` - Glass navigation with romantic styling
+- Enhanced pages with romantic themes throughout
+
+### Design Documentation
+See `DESIGN_SYSTEM.md` and `DESIGN_IMPROVEMENTS_SUMMARY.md` for complete design guidelines and implementation details.
+
+---
+
+**Experience the romance** - Every interaction is designed to create beautiful, emotional moments ❤️

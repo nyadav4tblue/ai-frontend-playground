@@ -51,6 +51,10 @@ export async function signInWithPassword(email: string, password: string) {
   return supabase.auth.signInWithPassword({ email, password })
 }
 
+export async function resendConfirmation(email: string) {
+  return supabase.auth.resend({ type: 'signup', email })
+}
+
 export async function signOut() {
   return supabase.auth.signOut()
 }

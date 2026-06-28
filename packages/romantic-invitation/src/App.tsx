@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AdminPage } from './routes/AdminPage'
 import { DashboardPage } from './routes/DashboardPage'
 import { ExpiredPage } from './routes/ExpiredPage'
@@ -10,6 +10,7 @@ import { LoginPage } from './routes/LoginPage'
 import { SignupPage } from './routes/SignupPage'
 import { PublicFlowPage } from './routes/PublicFlowPage'
 import { ProtectedRoute } from './components/ProtectedRoute'
+import { EnhancedNavigation } from './components/EnhancedNavigation'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -20,10 +21,21 @@ const queryClient = new QueryClient({
   },
 })
 
+// The floating marketing nav only belongs on the public landing page.
+// Authenticated pages (dashboard, admin, flow builder/responses) render their
+// own <TopNav />, and login/signup/public-flow pages need no marketing nav.
+const marketingNavPages = ['/']
+
 export default function App() {
+  const location = useLocation()
+  const showNav = marketingNavPages.includes(location.pathname)
+
   return (
     <QueryClientProvider client={queryClient}>
-      <Routes>
+      {/* Enhanced Navigation — stays mounted across route changes */}
+      {showNav && <EnhancedNavigation />}
+
+      <Routes location={location}>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />

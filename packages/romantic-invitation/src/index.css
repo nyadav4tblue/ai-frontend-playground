@@ -11,47 +11,183 @@
 body {
   margin: 0;
   min-height: 100vh;
-  /* Deep romantic gradient background */
-  background: linear-gradient(135deg, #1a0a2e 0%, #16213e 40%, #0f3460 100%);
+  /* Enhanced romantic gradient background with more depth */
+  background: linear-gradient(135deg, 
+    #0c0521 0%, 
+    #1a0a2e 25%, 
+    #16213e 50%, 
+    #0f3460 75%, 
+    #082255 100%);
   font-family: 'Lato', sans-serif;
   color: #f8f0f8;
   overflow-x: hidden;
+  position: relative;
+}
+
+/* Subtle romantic texture overlay */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(circle at 20% 80%, rgba(244, 63, 94, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(255, 107, 107, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(255, 192, 203, 0.05) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: -1;
 }
 
 /* Playfair Display for all romantic headings */
-h1, h2, h3, .font-heading {
+h1, h2, h3, h4, h5, h6, .font-heading {
   font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
-/* ─── Glassmorphism Utilities ─────────────────────────────────────── */
-/* Glass card: frosted glass panel sitting above the gradient background */
+/* Romantic text gradient utility */
+.text-gradient-romantic {
+  background: linear-gradient(135deg, #ff6b9d 0%, #ff8e53 50%, #f43f5e 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ─── Enhanced Glassmorphism Utilities ───────────────────────────── */
 .glass {
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.1) 0%, 
+    rgba(255, 255, 255, 0.08) 100%);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 1.5rem;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
-/* Lighter glass for nested cards */
 .glass-light {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.08) 0%, 
+    rgba(255, 255, 255, 0.05) 100%);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 1rem;
 }
 
+.glass-strong {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.15) 0%, 
+    rgba(255, 255, 255, 0.12) 100%);
+  backdrop-filter: blur(24px) saturate(200%);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 2rem;
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
 /* ─── Custom Scrollbar ────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar { 
+  width: 8px; 
+}
+::-webkit-scrollbar-track { 
+  background: rgba(255, 255, 255, 0.05); 
+  border-radius: 4px;
+}
 ::-webkit-scrollbar-thumb {
-  background: rgba(244, 63, 94, 0.4);
-  border-radius: 3px;
+  background: linear-gradient(135deg, #f43f5e 0%, #ff6b9d 100%);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #ff6b9d 0%, #ff8e53 100%);
 }
 
 /* ─── Selection color ─────────────────────────────────────────────── */
 ::selection {
-  background: rgba(244, 63, 94, 0.3);
+  background: rgba(244, 63, 94, 0.4);
   color: #fff;
+}
+
+/* ─── Romantic glow effects ──────────────────────────────────────── */
+.glow-rose {
+  box-shadow: 0 0 30px rgba(244, 63, 94, 0.4);
+}
+
+.glow-rose-light {
+  box-shadow: 0 0 20px rgba(244, 63, 94, 0.3);
+}
+
+/* ─── Romantic animations ────────────────────────────────────────── */
+@keyframes gentle-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes fadeInDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes romantic-float {
+  0%, 100% { 
+    transform: translateY(0) rotate(0deg); 
+  }
+  33% { 
+    transform: translateY(-10px) rotate(2deg); 
+  }
+  66% { 
+    transform: translateY(-5px) rotate(-1deg); 
+  }
+}
+
+.gentle-pulse {
+  animation: gentle-pulse 3s ease-in-out infinite;
+}
+
+.romantic-float {
+  animation: romantic-float 6s ease-in-out infinite;
+}
+
+/* ─── Romantic button styles ─────────────────────────────────────── */
+.btn-romantic {
+  background: linear-gradient(135deg, #f43f5e 0%, #ff6b9d 100%);
+  color: white;
+  font-weight: 600;
+  border: none;
+  border-radius: 9999px;
+  padding: 0.75rem 1.5rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(244, 63, 94, 0.4);
+}
+
+.btn-romantic:hover {
+  background: linear-gradient(135deg, #ff6b9d 0%, #f43f5e 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(244, 63, 94, 0.6);
+}
+
+.btn-romantic:active {
+  transform: translateY(0);
+}
+
+/* ─── Romantic border gradients ──────────────────────────────────── */
+.border-gradient-romantic {
+  border: double 1px transparent;
+  background-image: 
+    linear-gradient(135deg, #1a0a2e, #16213e),
+    linear-gradient(135deg, #f43f5e, #ff6b9d);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
 }
